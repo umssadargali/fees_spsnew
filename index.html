@@ -54,7 +54,13 @@
     </select>
 
     <div class="grid-row" style="margin-top:10px;">
-        <div><label>Student Id</label><input type="text" id="Student Id"></div>
+        <div>
+            <label>Student Id</label>
+            <div style="display:flex; gap:5px;">
+                <input type="text" id="Student Id">
+                <button onclick="searchStudent()" style="background:var(--p); color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; font-size:10px;">SEARCH</button>
+            </div>
+        </div>
         <div><label>Class</label><input type="text" id="Class"></div>
     </div>
     <div class="grid-row">
@@ -190,6 +196,19 @@
         document.getElementById('ui_due').innerText = (sub - disc) - paid;
     }
 
+    async function searchStudent() {
+        const id = document.getElementById('Student Id').value;
+        const m = document.getElementById('Month').value;
+        if(!id) return Swal.fire("Required", "Please enter Student ID", "warning");
+        Swal.fire({title:'Searching...', didOpen:()=>Swal.showLoading()});
+        try {
+            const res = await fetch(`${SCRIPT_URL}?action=search&id=${id}&month=${m}`);
+            const data = await res.json();
+            if(data.status === "found") { showDualReceipt(data.record, true); }
+            else { Swal.fire("Not Found", "No data for this ID & Month", "info"); }
+        } catch(e) { Swal.fire("Error", "Could not fetch data", "error"); }
+    }
+
     async function saveData() {
         let subTotal = document.getElementById('sub_t').value;
         let discount = document.getElementById('Discount').value || 0;
@@ -221,13 +240,11 @@
         showDualReceipt(data, false);
     }
 
-    // --- UPDATED DYNAMIC RECEIPT LOGIC ---
     function generateReceiptHTML(d, type, isSearch) {
         let sl = 1; let rows = "";
         const main = ["Prev Dues", "Admission Fee", "School Fee", "School Van Fee", "Hostel Fee", "Exam Fee"];
         main.forEach(k => { if(d[k]>0) rows += `<tr><td align="center">${sl++}.</td><td>${k}</td><td align="center">1</td><td align="center">${d[k]}</td></tr>`; });
         
-        // Define Categories for both Search and Save
         const categories = [
             { id: 'uni', name: 'School Uniform Fee', items: ["Shirts", "Pants", "T-Shirts", "Trousers", "Leggings", "Sweater", "Blazer"] },
             { id: 'book', name: 'School Books & Others', items: ["Books Fee", "Copies", "Cover", "Instrument Box"] },
@@ -235,36 +252,18 @@
         ];
 
         categories.forEach(cat => {
-            let catRows = "";
-            let subSl = 1;
-
+            let catRows = ""; let subSl = 1;
             if(!isSearch) {
-                // Logic for NEW ENTRY (Reading from UI Tables)
                 let uiRows = document.querySelectorAll(`tr[data-type="${cat.id}"]`);
-                uiRows.forEach(row => {
-                    catRows += `<tr><td></td><td>(${roman(subSl++)}) ${row.getAttribute('data-h')}</td><td align="center">${row.querySelector('.q-in').value}</td><td align="center">${row.querySelector('.a-in').value}</td></tr>`;
-                });
+                uiRows.forEach(row => { catRows += `<tr><td></td><td>(${roman(subSl++)}) ${row.getAttribute('data-h')}</td><td align="center">${row.querySelector('.q-in').value}</td><td align="center">${row.querySelector('.a-in').value}</td></tr>`; });
             } else {
-                // Logic for SEARCH (Reading from Sheet Data / Object)
-                cat.items.forEach(itemKey => {
-                    if(d[itemKey] && parseFloat(d[itemKey]) > 0) {
-                        catRows += `<tr><td></td><td>(${roman(subSl++)}) ${itemKey}</td><td align="center">1</td><td align="center">${d[itemKey]}</td></tr>`;
-                    }
-                });
-                // Dynamic Catch-all: If user added a column in sheet that isn't in lists above, put it in 'Other'
+                cat.items.forEach(k => { if(d[k] && parseFloat(d[k])>0) catRows += `<tr><td></td><td>(${roman(subSl++)}) ${k}</td><td align="center">1</td><td align="center">${d[k]}</td></tr>`; });
                 if(cat.id === 'oth') {
-                   const knownKeys = [...main, ...categories[0].items, ...categories[1].items, ...categories[2].items, "School Bag", "Development Fee", "Other Fee", "Sub Total", "Discount", "Total Paid", "Remaining", "Student Id", "Month", "Student Name", "Father Name", "Class", "Address", "Paid Date"];
-                   Object.keys(d).forEach(k => {
-                       if(!knownKeys.includes(k) && parseFloat(d[k]) > 0) {
-                           catRows += `<tr><td></td><td>(${roman(subSl++)}) ${k}</td><td align="center">1</td><td align="center">${d[k]}</td></tr>`;
-                       }
-                   });
+                   const known = [...main, ...categories[0].items, ...categories[1].items, ...categories[2].items, "School Bag", "Development Fee", "Other Fee", "Sub Total", "Discount", "Total Paid", "Remaining", "Student Id", "Month", "Student Name", "Father Name", "Class", "Address", "Paid Date"];
+                   Object.keys(d).forEach(k => { if(!known.includes(k) && parseFloat(d[k])>0) catRows += `<tr><td></td><td>(${roman(subSl++)}) ${k}</td><td align="center">1</td><td align="center">${d[k]}</td></tr>`; });
                 }
             }
-
-            if(catRows !== "") {
-                rows += `<tr><td align="center">${sl++}.</td><td colspan="3"><b>${cat.name}</b></td></tr>` + catRows;
-            }
+            if(catRows !== "") rows += `<tr><td align="center">${sl++}.</td><td colspan="3"><b>${cat.name}</b></td></tr>` + catRows;
         });
 
         const extra = ["School Bag", "Development Fee", "Other Fee"];
