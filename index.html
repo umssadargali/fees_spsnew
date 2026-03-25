@@ -7,17 +7,8 @@
     <style>
         /* INTERFACE STYLES */
         :root { --p: #1a237e; --bg: #f4f7f6; }
-        body { font-family: 'Poppins', sans-serif; background: var(--bg); margin: 0; padding-top: 60px; }
-        
-        /* Navigation & Tabs */
-        .nav { background: var(--p); position: fixed; top: 0; width: 100%; z-index: 1000; color: white; }
-        .tab-box { display: flex; justify-content: center; background: rgba(0,0,0,0.1); }
-        .tab-btn { flex: 1; padding: 12px; border: none; background: none; color: white; cursor: pointer; font-weight: bold; font-family: 'Poppins'; border-bottom: 3px solid transparent; }
-        .tab-btn.active { border-bottom: 3px solid #ffeb3b; background: rgba(255,255,255,0.1); }
-        
-        .content-section { display: none; }
-        .content-section.active { display: block; }
-
+        body { font-family: 'Poppins', sans-serif; background: var(--bg); margin: 0; padding-top: 50px; }
+        .nav { background: var(--p); padding: 10px; position: fixed; top: 0; width: 100%; z-index: 1000; text-align: center; color: white; font-weight: bold; }
         .container { max-width: 550px; margin: 10px auto; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .section-title { background: #eee; padding: 5px 10px; font-weight: bold; margin-top: 15px; border-left: 4px solid var(--p); font-size: 13px; }
         .grid-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px; }
@@ -27,13 +18,7 @@
         .total-box { background: #fff9c4; padding: 15px; border-radius: 8px; margin-top: 15px; border: 1px solid #fbc02d; }
         .btn-save { width: 100%; padding: 15px; background: #2e7d32; color: white; border: none; border-radius: 6px; font-weight: bold; margin-top: 15px; cursor: pointer; font-size: 16px; }
 
-        /* Search Table Style */
-        .search-res-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 12px; background: white; border-radius: 5px; overflow: hidden; }
-        .search-res-table th { background: var(--p); color: white; padding: 10px; text-align: left; }
-        .search-res-table td { border-bottom: 1px solid #ddd; padding: 10px; }
-        .view-btn { background: #e91e63; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; font-weight: bold; }
-
-        /* RECEIPT DESIGN (Same as yours) */
+        /* RECEIPT DESIGN */
         #receipt-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 9999; overflow-y: auto; padding: 20px; }
         .print-wrapper { display: flex; justify-content: space-between; gap: 20px; width: 100%; max-width: 1100px; margin: 0 auto; }
         .receipt-box { flex: 1; background: #ffdae9; border: 2px solid #000; padding: 15px; color: #000; position: relative; font-family: Arial, sans-serif; }
@@ -60,103 +45,82 @@
 </head>
 <body>
 
-<div class="nav no-print">
-    <div style="text-align:center; padding:5px; font-size:14px;">SAGAR PUBLIC SCHOOL</div>
-    <div class="tab-box">
-        <button class="tab-btn active" onclick="openTab('new-entry')">NEW ENTRY</button>
-        <button class="tab-btn" onclick="openTab('search-tab')">SEARCH RECEIPT</button>
-    </div>
-</div>
+<div class="nav no-print">SAGAR PUBLIC SCHOOL - FEE ENTRY</div>
 
-<div id="new-entry" class="content-section active">
-    <div class="container no-print">
-        <label>Select Month</label>
-        <select id="Month" onchange="fetchHeaders()">
-            <option>January</option><option>February</option><option>March</option><option>April</option><option>May</option><option>June</option><option>July</option><option>August</option><option>September</option><option>October</option><option>November</option><option>December</option>
+<div class="container no-print">
+    <label>Select Month</label>
+    <select id="Month" onchange="fetchHeaders()">
+        <option>January</option><option>February</option><option>March</option><option>April</option><option>May</option><option>June</option><option>July</option><option>August</option><option>September</option><option>October</option><option>November</option><option>December</option>
+    </select>
+
+    <div class="grid-row" style="margin-top:10px;">
+        <div><label>Student Id</label><input type="text" id="Student Id"></div>
+        <div><label>Class</label><input type="text" id="Class"></div>
+    </div>
+    <div class="grid-row">
+        <div><label>Student Name</label><input type="text" id="Student Name"></div>
+        <div><label>Father Name</label><input type="text" id="Father Name"></div>
+    </div>
+    <div><label>Address</label><input type="text" id="Address"></div>
+
+    <div class="section-title">1-5. Regular Fees</div>
+    <div class="grid-row">
+        <div><label>Previous Due</label><input type="number" class="calc-total" id="Prev Dues" oninput="calculate()"></div>
+        <div><label>Admission Fee</label><input type="number" class="calc-total" id="Admission Fee" oninput="calculate()"></div>
+    </div>
+    <div class="grid-row">
+        <div><label>School Fee</label><input type="number" class="calc-total" id="School Fee" oninput="calculate()"></div>
+        <div><label>School Van Fee</label><input type="number" class="calc-total" id="School Van Fee" oninput="calculate()"></div>
+    </div>
+    <div class="grid-row">
+        <div><label>Hostel Fee</label><input type="number" class="calc-total" id="Hostel Fee" oninput="calculate()"></div>
+        <div><label>Exam Fee</label><input type="number" class="calc-total" id="Exam Fee" oninput="calculate()"></div>
+    </div>
+
+    <div class="section-title">6. School Uniform Fee</div>
+    <div style="display:flex; gap:5px; margin-bottom:5px;">
+        <select id="uni-dropdown"><option value="">Loading...</option></select>
+        <button onclick="addRow('uni')" style="background:var(--p); color:white; border:none; padding:5px 12px; border-radius:4px;">ADD</button>
+    </div>
+    <table class="fee-table"><tbody id="uni-body"></tbody></table>
+
+    <div class="section-title">7. School Books & Others</div>
+    <div style="display:flex; gap:5px; margin-bottom:5px;">
+        <select id="book-dropdown"><option value="">Loading...</option></select>
+        <button onclick="addRow('book')" style="background:var(--p); color:white; border:none; padding:5px 12px; border-radius:4px;">ADD</button>
+    </div>
+    <table class="fee-table"><tbody id="book-body"></tbody></table>
+
+    <div class="section-title">8. Other Fee</div>
+    <div style="display:flex; gap:5px; margin-bottom:5px;">
+        <select id="oth-dropdown">
+            <option value="">Select Other Fee...</option>
+            <option value="Republic Day Fee">Republic Day Fee</option>
+            <option value="Independence Day Fee">Independence Day Fee</option>
+            <option value="UDISE Fee">UDISE Fee</option>
         </select>
-
-        <div class="grid-row" style="margin-top:10px;">
-            <div><label>Student Id</label><input type="text" id="Student Id"></div>
-            <div><label>Class</label><input type="text" id="Class"></div>
-        </div>
-        <div class="grid-row">
-            <div><label>Student Name</label><input type="text" id="Student Name"></div>
-            <div><label>Father Name</label><input type="text" id="Father Name"></div>
-        </div>
-        <div><label>Address</label><input type="text" id="Address"></div>
-
-        <div class="section-title">1-5. Regular Fees</div>
-        <div class="grid-row">
-            <div><label>Previous Due</label><input type="number" class="calc-total" id="Prev Dues" oninput="calculate()"></div>
-            <div><label>Admission Fee</label><input type="number" class="calc-total" id="Admission Fee" oninput="calculate()"></div>
-        </div>
-        <div class="grid-row">
-            <div><label>School Fee</label><input type="number" class="calc-total" id="School Fee" oninput="calculate()"></div>
-            <div><label>School Van Fee</label><input type="number" class="calc-total" id="School Van Fee" oninput="calculate()"></div>
-        </div>
-        <div class="grid-row">
-            <div><label>Hostel Fee</label><input type="number" class="calc-total" id="Hostel Fee" oninput="calculate()"></div>
-            <div><label>Exam Fee</label><input type="number" class="calc-total" id="Exam Fee" oninput="calculate()"></div>
-        </div>
-
-        <div class="section-title">6. School Uniform Fee</div>
-        <div style="display:flex; gap:5px; margin-bottom:5px;">
-            <select id="uni-dropdown"><option value="">Loading...</option></select>
-            <button onclick="addRow('uni')" style="background:var(--p); color:white; border:none; padding:5px 12px; border-radius:4px;">ADD</button>
-        </div>
-        <table class="fee-table"><tbody id="uni-body"></tbody></table>
-
-        <div class="section-title">7. School Books & Others</div>
-        <div style="display:flex; gap:5px; margin-bottom:5px;">
-            <select id="book-dropdown"><option value="">Loading...</option></select>
-            <button onclick="addRow('book')" style="background:var(--p); color:white; border:none; padding:5px 12px; border-radius:4px;">ADD</button>
-        </div>
-        <table class="fee-table"><tbody id="book-body"></tbody></table>
-
-        <div class="section-title">8. Other Fee</div>
-        <div style="display:flex; gap:5px; margin-bottom:5px;">
-            <select id="oth-dropdown">
-                <option value="">Select Other Fee...</option>
-                <option value="Republic Day Fee">Republic Day Fee</option>
-                <option value="Independence Day Fee">Independence Day Fee</option>
-                <option value="UDISE Fee">UDISE Fee</option>
-            </select>
-            <button onclick="addRow('oth')" style="background:var(--p); color:white; border:none; padding:5px 12px; border-radius:4px;">ADD</button>
-        </div>
-        <table class="fee-table"><tbody id="oth-body"></tbody></table>
-        
-        <div class="section-title">Additional Fees</div>
-        <div class="grid-row">
-            <div><label>9. School Bag</label><input type="number" class="calc-total" id="School Bag" oninput="calculate()"></div>
-            <div><label>10. Development Fee</label><input type="number" class="calc-total" id="Development Fee" oninput="calculate()"></div>
-        </div>
-        <div><label>11. Miscellaneous Fee</label><input type="number" class="calc-total" id="Other Fee" oninput="calculate()"></div>
-
-        <div class="total-box">
-            <div class="grid-row">
-                <div><label>Sub Total</label><input type="number" id="sub_t" readonly style="background:#f0f0f0"></div>
-                <div><label>Discount</label><input type="number" id="Discount" oninput="calculate()" value="0"></div>
-            </div>
-            <label style="color:blue">PAID AMOUNT (Deposit) ₹</label>
-            <input type="number" id="Total Paid" oninput="calculate()" style="font-size: 20px; font-weight: bold; border: 2px solid blue;">
-            <div style="text-align:right; font-weight:bold; margin-top:5px; color:red;">Due Balance: <span id="ui_due">0</span></div>
-        </div>
-
-        <button class="btn-save" onclick="saveData()">SAVE & PRINT DUAL RECEIPT 🖨️</button>
+        <button onclick="addRow('oth')" style="background:var(--p); color:white; border:none; padding:5px 12px; border-radius:4px;">ADD</button>
     </div>
-</div>
-
-<div id="search-tab" class="content-section">
-    <div class="container no-print">
-        <label>Enter Student ID to Search</label>
-        <div style="display:flex; gap:10px;">
-            <input type="text" id="s_id" placeholder="e.g. 101">
-            <button onclick="searchData()" style="padding:0 20px; background:var(--p); color:white; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">SEARCH</button>
-        </div>
-        
-        <div id="search-results">
-            </div>
+    <table class="fee-table"><tbody id="oth-body"></tbody></table>
+    
+    <div class="section-title">Additional Fees</div>
+    <div class="grid-row">
+        <div><label>9. School Bag</label><input type="number" class="calc-total" id="School Bag" oninput="calculate()"></div>
+        <div><label>10. Development Fee</label><input type="number" class="calc-total" id="Development Fee" oninput="calculate()"></div>
     </div>
+    <div><label>11. Miscellaneous Fee</label><input type="number" class="calc-total" id="Other Fee" oninput="calculate()"></div>
+
+    <div class="total-box">
+        <div class="grid-row">
+            <div><label>Sub Total</label><input type="number" id="sub_t" readonly style="background:#f0f0f0"></div>
+            <div><label>Discount</label><input type="number" id="Discount" oninput="calculate()" value="0"></div>
+        </div>
+        <label style="color:blue">PAID AMOUNT (Deposit) ₹</label>
+        <input type="number" id="Total Paid" oninput="calculate()" style="font-size: 20px; font-weight: bold; border: 2px solid blue;">
+        <div style="text-align:right; font-weight:bold; margin-top:5px; color:red;">Due Balance: <span id="ui_due">0</span></div>
+    </div>
+
+    <button class="btn-save" onclick="saveData()">SAVE & PRINT DUAL RECEIPT 🖨️</button>
 </div>
 
 <div id="receipt-modal">
@@ -172,50 +136,6 @@
 
 <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyYXysJEju_Ljzj6m-FhMtbptuLFB3vAIHk7FHT3c8yuafwKFOuShroGickq8kZ7wYisg/exec";
-    let lastSearchResults = [];
-
-    // TABS CONTROL
-    function openTab(id) {
-        document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        event.target.classList.add('active');
-    }
-
-    // SEARCH LOGIC
-    async function searchData() {
-        const id = document.getElementById('s_id').value;
-        if(!id) return;
-        
-        Swal.fire({title:'Searching...', didOpen:()=>Swal.showLoading()});
-        const res = await fetch(`${SCRIPT_URL}?action=searchData&id=${id}`);
-        lastSearchResults = await res.json();
-        Swal.close();
-        
-        if(lastSearchResults.length === 0) {
-            document.getElementById('search-results').innerHTML = `<p style="text-align:center; margin-top:20px; color:red">No records found!</p>`;
-            return;
-        }
-        
-        let html = `<table class="search-res-table">
-            <thead><tr><th>Month</th><th>Paid</th><th>Action</th></tr></thead>
-            <tbody>`;
-        
-        lastSearchResults.forEach((row, index) => {
-            html += `<tr>
-                <td><b>${row.Month}</b></td>
-                <td>₹${row["Total Paid"]}</td>
-                <td><button class="view-btn" onclick="viewOldReceipt(${index})">VIEW RECEIPT</button></td>
-            </tr>`;
-        });
-        html += `</tbody></table>`;
-        document.getElementById('search-results').innerHTML = html;
-    }
-
-    function viewOldReceipt(index) {
-        const data = lastSearchResults[index];
-        showDualReceipt(data, true); // true means it's from search
-    }
 
     function roman(n) { const r = ["i","ii","iii","iv","v","vi","vii","viii","ix","x"]; return r[n-1] || n; }
 
@@ -295,39 +215,57 @@
             "Sub Total": subTotal, 
             "Remaining": remaining
         };
-        
-        document.querySelectorAll('tr[data-h]').forEach(row => { 
-            data[row.getAttribute('data-h')] = row.querySelector('.a-in').value || 0; 
-        });
-        
+        document.querySelectorAll('tr[data-h]').forEach(row => { data[row.getAttribute('data-h')] = row.querySelector('.a-in').value || 0; });
         Swal.fire({title:'Saving Data...', didOpen:()=>Swal.showLoading()});
         await fetch(SCRIPT_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(data) });
-        showDualReceipt(data);
+        showDualReceipt(data, false);
     }
 
+    // --- UPDATED DYNAMIC RECEIPT LOGIC ---
     function generateReceiptHTML(d, type, isSearch) {
         let sl = 1; let rows = "";
         const main = ["Prev Dues", "Admission Fee", "School Fee", "School Van Fee", "Hostel Fee", "Exam Fee"];
         main.forEach(k => { if(d[k]>0) rows += `<tr><td align="center">${sl++}.</td><td>${k}</td><td align="center">1</td><td align="center">${d[k]}</td></tr>`; });
         
-        if(!isSearch) {
-            // New Entry case: Get from dynamic tables
-            ["uni", "book", "oth"].forEach(t => {
-                let rws = document.querySelectorAll(`tr[data-type="${t}"]`);
-                if(rws.length > 0) {
-                    rows += `<tr><td align="center">${sl++}.</td><td colspan="3"><b>${t === 'uni' ? 'Uniform' : t === 'book' ? 'Books' : 'Other Fees'}</b></td></tr>`;
-                    rws.forEach((row, i) => { rows += `<tr><td></td><td>(${roman(i+1)}) ${row.getAttribute('data-h')}</td><td align="center">${row.querySelector('.q-in').value}</td><td align="center">${row.querySelector('.a-in').value}</td></tr>`; });
+        // Define Categories for both Search and Save
+        const categories = [
+            { id: 'uni', name: 'School Uniform Fee', items: ["Shirts", "Pants", "T-Shirts", "Trousers", "Leggings", "Sweater", "Blazer"] },
+            { id: 'book', name: 'School Books & Others', items: ["Books Fee", "Copies", "Cover", "Instrument Box"] },
+            { id: 'oth', name: 'Other Fees', items: ["Republic Day Fee", "Independence Day Fee", "UDISE Fee"] }
+        ];
+
+        categories.forEach(cat => {
+            let catRows = "";
+            let subSl = 1;
+
+            if(!isSearch) {
+                // Logic for NEW ENTRY (Reading from UI Tables)
+                let uiRows = document.querySelectorAll(`tr[data-type="${cat.id}"]`);
+                uiRows.forEach(row => {
+                    catRows += `<tr><td></td><td>(${roman(subSl++)}) ${row.getAttribute('data-h')}</td><td align="center">${row.querySelector('.q-in').value}</td><td align="center">${row.querySelector('.a-in').value}</td></tr>`;
+                });
+            } else {
+                // Logic for SEARCH (Reading from Sheet Data / Object)
+                cat.items.forEach(itemKey => {
+                    if(d[itemKey] && parseFloat(d[itemKey]) > 0) {
+                        catRows += `<tr><td></td><td>(${roman(subSl++)}) ${itemKey}</td><td align="center">1</td><td align="center">${d[itemKey]}</td></tr>`;
+                    }
+                });
+                // Dynamic Catch-all: If user added a column in sheet that isn't in lists above, put it in 'Other'
+                if(cat.id === 'oth') {
+                   const knownKeys = [...main, ...categories[0].items, ...categories[1].items, ...categories[2].items, "School Bag", "Development Fee", "Other Fee", "Sub Total", "Discount", "Total Paid", "Remaining", "Student Id", "Month", "Student Name", "Father Name", "Class", "Address", "Paid Date"];
+                   Object.keys(d).forEach(k => {
+                       if(!knownKeys.includes(k) && parseFloat(d[k]) > 0) {
+                           catRows += `<tr><td></td><td>(${roman(subSl++)}) ${k}</td><td align="center">1</td><td align="center">${d[k]}</td></tr>`;
+                       }
+                   });
                 }
-            });
-        } else {
-            // Search case: Detect dynamic columns from data
-            const fixed = ["Student Id","Month","Student Name","Father Name","Class","Address","Prev Dues","Admission Fee","School Fee","Hostel Fee","Exam Fee","School Bag","Discount","Total Paid","Total Dues","Remaining","Paid Date","School Van Fee","Development Fee","Other Fee","Sub Total", "Timestamp"];
-            let dynamicKeys = Object.keys(d).filter(k => !fixed.includes(k) && d[k] > 0);
-            if(dynamicKeys.length > 0) {
-                rows += `<tr><td align="center">${sl++}.</td><td colspan="3"><b>Dynamic Items</b></td></tr>`;
-                dynamicKeys.forEach((k, i) => { rows += `<tr><td></td><td>(${roman(i+1)}) ${k}</td><td align="center">1</td><td align="center">${d[k]}</td></tr>`; });
             }
-        }
+
+            if(catRows !== "") {
+                rows += `<tr><td align="center">${sl++}.</td><td colspan="3"><b>${cat.name}</b></td></tr>` + catRows;
+            }
+        });
 
         const extra = ["School Bag", "Development Fee", "Other Fee"];
         extra.forEach(k => { if(d[k]>0) rows += `<tr><td align="center">${sl++}.</td><td>${k}</td><td align="center">1</td><td align="center">${d[k]}</td></tr>`; });
@@ -362,7 +300,7 @@
             </div>`;
     }
 
-    function showDualReceipt(d, isSearch = false) {
+    function showDualReceipt(d, isSearch) {
         document.getElementById('guardian-copy').innerHTML = generateReceiptHTML(d, "Guardian's Copy", isSearch);
         document.getElementById('office-copy').innerHTML = generateReceiptHTML(d, "Office Copy", isSearch);
         Swal.close();
