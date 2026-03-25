@@ -114,38 +114,41 @@
         document.querySelector('.container').style.display = 'block';
     }
 
-    // HU-BA-HU COPY FROM INDEX.HTML
+    // UPDATED: HU-BA-HU DYNAMIC LOGIC FROM INDEX.HTML
     function generateReceiptHTML(d, type) {
         let sl = 1; let rows = "";
+        
+        // 1. Regular Main Fees
         const main = ["Prev Dues", "Admission Fee", "School Fee", "School Van Fee", "Hostel Fee", "Exam Fee"];
         main.forEach(k => { if(d[k]>0) rows += `<tr><td align="center">${sl++}.</td><td>${k}</td><td align="center">1</td><td align="center">${d[k]}</td></tr>`; });
         
-        // Dynamic Groups Logic
-        const uniKeys = ["Shirts", "Pants", "T-Shirts", "Trousers"];
-        let hasUni = false; uniKeys.forEach(k => { if(d[k]>0) hasUni = true; });
-        if(hasUni) {
-            rows += `<tr><td align="center">${sl++}.</td><td colspan="3"><b>School Uniform Fee</b></td></tr>`;
-            uniKeys.forEach((k, i) => { if(d[k]>0) rows += `<tr><td></td><td>(${roman(i+1)}) ${k}</td><td align="center">1</td><td align="center">${d[k]}</td></tr>`; });
+        // 2. Dynamic Scanning for Sub-Groups (Just like index.html)
+        const exclude = ["Student Id","Month","Student Name","Father Name","Class","Address","Prev Dues","Admission Fee","School Fee","Hostel Fee","Exam Fee","School Bag","Discount","Total Paid","Total Dues","Remaining","Paid Date","School Van Fee","Development Fee","Other Fee","Sub Total","Republic Day Fee","Independence Day Fee","UDISE Fee"];
+        
+        // Check for dynamic keys (Uniforms, Books, etc.)
+        let otherItems = Object.keys(d).filter(k => !exclude.includes(k) && d[k] > 0);
+        
+        if(otherItems.length > 0) {
+            rows += `<tr><td align="center">${sl++}.</td><td colspan="3"><b>Additional Items/Fees</b></td></tr>`;
+            otherItems.forEach((k, i) => { 
+                rows += `<tr><td></td><td>(${roman(i+1)}) ${k}</td><td align="center">1</td><td align="center">${d[k]}</td></tr>`; 
+            });
         }
 
-        const bookKeys = ["Books Fee", "Copies", "Cover", "Instrument Box"];
-        let hasBook = false; bookKeys.forEach(k => { if(d[k]>0) hasBook = true; });
-        if(hasBook) {
-            rows += `<tr><td align="center">${sl++}.</td><td colspan="3"><b>School Books & Other</b></td></tr>`;
-            bookKeys.forEach((k, i) => { if(d[k]>0) rows += `<tr><td></td><td>(${roman(i+1)}) ${k}</td><td align="center">1</td><td align="center">${d[k]}</td></tr>`; });
+        // 3. Special Miscellaneous Fees
+        const misc = ["Republic Day Fee", "Independence Day Fee", "UDISE Fee"];
+        let hasMisc = misc.some(k => d[k] > 0);
+        if(hasMisc) {
+            rows += `<tr><td align="center">${sl++}.</td><td colspan="3"><b>Other School Fees</b></td></tr>`;
+            misc.forEach((k, i) => { if(d[k]>0) rows += `<tr><td></td><td>(${roman(i+1)}) ${k}</td><td align="center">1</td><td align="center">${d[k]}</td></tr>`; });
         }
 
-        const othKeys = ["Republic Day Fee", "Independence Day Fee", "UDISE Fee"];
-        let hasOth = false; othKeys.forEach(k => { if(d[k]>0) hasOth = true; });
-        if(hasOth) {
-            rows += `<tr><td align="center">${sl++}.</td><td colspan="3"><b>Miscellaneous Fees</b></td></tr>`;
-            othKeys.forEach((k, i) => { if(d[k]>0) rows += `<tr><td></td><td>(${roman(i+1)}) ${k}</td><td align="center">1</td><td align="center">${d[k]}</td></tr>`; });
-        }
-
+        // 4. Extra Final Fees
         const extra = ["School Bag", "Development Fee", "Other Fee"];
         extra.forEach(k => { if(d[k]>0) rows += `<tr><td align="center">${sl++}.</td><td>${k}</td><td align="center">1</td><td align="center">${d[k]}</td></tr>`; });
 
-        return `<div class="receipt-inner">
+        return `
+            <div class="receipt-inner">
                 <div class="r-header">
                     <div style="display:flex; justify-content:space-between;"><span class="copy-tag">${type}</span><span style="font-size:9px">UDISE: 10101122703</span></div>
                     <h2>SAGAR PUBLIC SCHOOL</h2>
@@ -153,7 +156,7 @@
                     <p style="font-size:8px">email: sagarpublicschool2023@gmail.com</p>
                     <p style="font-size:7px">RTE Reg No.21211472023218114225 | UDISE No.10101122703</p>
                 </div>
-                <div class="top-info"><span>Sl: A-${Math.floor(1000 + Math.random()*9000)}</span><span>Date: ${d["Paid Date"] || ""}</span></div>
+                <div class="top-info"><span>Sl: A-${Math.floor(1000 + Math.random()*9000)}</span><span>Date: ${d["Paid Date"] || new Date().toLocaleDateString('en-GB')}</span></div>
                 <div class="student-details">
                     <div><b>Name:</b> ${d["Student Name"]}</div><div><b>ID:</b> ${d["Student Id"]}</div>
                     <div><b>Father:</b> ${d["Father Name"]}</div><div><b>Class:</b> ${d["Class"]}</div>
