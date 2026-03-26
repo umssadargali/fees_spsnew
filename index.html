@@ -93,14 +93,36 @@
 
     <div class="section-title">6. School Uniform Fee</div>
     <div style="display:flex; gap:5px; margin-bottom:5px;">
-        <select id="uni-dropdown"><option value="">Loading...</option></select>
+        <select id="uni-dropdown">
+            <option value="">Select Uniform...</option>
+            <option value="Shirts">Shirts</option>
+            <option value="Pants">Pants</option>
+            <option value="T-Shirts">T-Shirts</option>
+            <option value="Trousers">Trousers</option>
+            <option value="Leggings">Leggings</option>
+            <option value="Blazer">Blazer</option>
+            <option value="Sweater">Sweater</option>
+            <option value="Belt">Belt</option>
+            <option value="Tie">Tie</option>
+            <option value="Shoes">Shoes</option>
+            <option value="Socks">Socks</option>
+            <option value="Uniform">Uniform</option>
+        </select>
         <button onclick="addRow('uni')" style="background:var(--p); color:white; border:none; padding:5px 12px; border-radius:4px;">ADD</button>
     </div>
     <table class="fee-table"><tbody id="uni-body"></tbody></table>
 
     <div class="section-title">7. School Books & Others</div>
     <div style="display:flex; gap:5px; margin-bottom:5px;">
-        <select id="book-dropdown"><option value="">Loading...</option></select>
+        <select id="book-dropdown">
+            <option value="">Select Books...</option>
+            <option value="Books Fee">Books Fee</option>
+            <option value="Copies">Copies</option>
+            <option value="Cover">Cover</option>
+            <option value="Instrument Box">Instrument Box</option>
+            <option value="Diary">Diary</option>
+            <option value="Stationary">Stationary</option>
+        </select>
         <button onclick="addRow('book')" style="background:var(--p); color:white; border:none; padding:5px 12px; border-radius:4px;">ADD</button>
     </div>
     <table class="fee-table"><tbody id="book-body"></tbody></table>
@@ -185,18 +207,10 @@
         return str.trim();
     }
 
+    // UPDATE: Humne fetchHeaders ko sirf hidden checks ke liye rakha hai
     async function fetchHeaders() {
-        const m = document.getElementById('Month').value;
-        try {
-            const res = await fetch(`${SCRIPT_URL}?action=getHeaders&month=${m}`);
-            const headers = await res.json();
-            const exclude = ["Student Id","Month","Student Name","Father Name","Class","Address","Prev Dues","Admission Fee","School Fee","Hostel Fee","Exam Fee","School Bag","Discount","Total Paid","Total Dues","Remaining","Paid Date","School Van Fee","Development Fee","Other Fee","Sub Total", "Republic Day Fee", "Independence Day Fee", "UDISE Fee"];
-            let uniHtml = '<option value="">Select Uniform</option>';
-            let bookHtml = '<option value="">Select Books</option>';
-            headers.forEach(h => { if(h && !exclude.includes(h)) { uniHtml += `<option value="${h}">${h}</option>`; bookHtml += `<option value="${h}">${h}</option>`; } });
-            document.getElementById('uni-dropdown').innerHTML = uniHtml;
-            document.getElementById('book-dropdown').innerHTML = bookHtml;
-        } catch(e) { console.log("Fetch error"); }
+        // Dropdowns ab manual (static) hain isliye fetch se update nahi honge
+        // Par agar future mein sheet logic chahiye to ye function rahega.
     }
 
     function addRow(type) {
@@ -246,7 +260,9 @@
             "Sub Total": subTotal, 
             "Remaining": document.getElementById('ui_due').innerText
         };
+        // Add specific fees from tables
         document.querySelectorAll('tr[data-h]').forEach(row => { data[row.getAttribute('data-h')] = row.querySelector('.a-in').value || 0; });
+        
         Swal.fire({title:'Saving...', didOpen:()=>Swal.showLoading()});
         await fetch(SCRIPT_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(data) });
         showDualReceipt(data);
@@ -277,7 +293,6 @@
     function closeReceipt() {
         document.getElementById('receipt-modal').style.display = 'none';
         document.querySelectorAll('.container').forEach(c => c.style.display = 'block');
-        showView(document.getElementById('btn-nav-entry').className === 'active' ? 'entry' : 'search');
     }
 
     function showDualReceipt(d) {
@@ -291,11 +306,10 @@
     function generateReceiptHTML(d, type) {
         let sl = 1; let rows = "";
         
-        // 1. Regular Fees
         const main = ["Prev Dues", "Admission Fee", "School Fee", "School Van Fee", "Hostel Fee", "Exam Fee"];
         main.forEach(k => { if(d[k]>0) rows += `<tr><td align="center">${sl++}.</td><td>${k}</td><td align="center">1</td><td align="center">${d[k]}</td></tr>`; });
         
-        // 2. SPECIFIC ITEMS LIST (Aapki requirement ke hisab se)
+        // SPECIFIC LISTS FOR RECEIPT
         const uniformList = ["Shirts", "Pants", "T-Shirts", "Trousers", "Leggings", "Blazer", "Sweater", "Belt", "Tie", "Shoes", "Socks", "Uniform"];
         const booksList = ["Books Fee", "Copies", "Cover", "Instrument Box", "Diary", "Stationary"];
         const miscList = ["Republic Day Fee", "Independence Day Fee", "UDISE Fee"];
@@ -304,25 +318,15 @@
         let bTemp = ""; let bC = 1;
         let mTemp = ""; let mC = 1;
 
-        // Section 7: School Uniform Fee
-        uniformList.forEach(k => {
-            if(d[k] > 0) uTemp += `<tr><td></td><td>(${roman(uC++)}) ${k}</td><td align="center">1</td><td align="center">${d[k]}</td></tr>`;
-        });
+        uniformList.forEach(k => { if(d[k]>0) uTemp += `<tr><td></td><td>(${roman(uC++)}) ${k}</td><td align="center">1</td><td align="center">${d[k]}</td></tr>`; });
         if(uTemp) rows += `<tr><td align="center">${sl++}.</td><td colspan="3"><b>School Uniform Fee</b></td></tr>` + uTemp;
 
-        // Section 8: School Books & Others
-        booksList.forEach(k => {
-            if(d[k] > 0) bTemp += `<tr><td></td><td>(${roman(bC++)}) ${k}</td><td align="center">1</td><td align="center">${d[k]}</td></tr>`;
-        });
+        booksList.forEach(k => { if(d[k]>0) bTemp += `<tr><td></td><td>(${roman(bC++)}) ${k}</td><td align="center">1</td><td align="center">${d[k]}</td></tr>`; });
         if(bTemp) rows += `<tr><td align="center">${sl++}.</td><td colspan="3"><b>School Books & Other</b></td></tr>` + bTemp;
 
-        // Section Miscellaneous
-        miscList.forEach(k => {
-            if(d[k] > 0) mTemp += `<tr><td></td><td>(${roman(mC++)}) ${k}</td><td align="center">1</td><td align="center">${d[k]}</td></tr>`;
-        });
+        miscList.forEach(k => { if(d[k]>0) mTemp += `<tr><td></td><td>(${roman(mC++)}) ${k}</td><td align="center">1</td><td align="center">${d[k]}</td></tr>`; });
         if(mTemp) rows += `<tr><td align="center">${sl++}.</td><td colspan="3"><b>Miscellaneous Fees</b></td></tr>` + mTemp;
 
-        // 3. Additional Fees
         const extra = ["School Bag", "Development Fee", "Other Fee"];
         extra.forEach(k => { if(d[k]>0) rows += `<tr><td align="center">${sl++}.</td><td>${k}</td><td align="center">1</td><td align="center">${d[k]}</td></tr>`; });
 
