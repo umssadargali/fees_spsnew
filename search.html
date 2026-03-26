@@ -17,7 +17,7 @@
         .month-info p { margin: 2px 0 0; font-size: 13px; color: #666; }
         .btn-view { background: #e91e63; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight: 600; font-size: 12px; }
 
-        /* RECEIPT DESIGN FROM INDEX.HTML */
+        /* RECEIPT DESIGN - SAME AS INDEX.HTML */
         #receipt-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 9999; overflow-y: auto; padding: 20px; }
         .print-wrapper { display: flex; justify-content: space-between; gap: 20px; width: 100%; max-width: 1100px; margin: 0 auto; }
         .receipt-box { flex: 1; background: #ffdae9; border: 2px solid #000; padding: 15px; color: #000; position: relative; font-family: Arial, sans-serif; }
@@ -55,7 +55,7 @@
         <div class="receipt-box" id="guardian-copy"></div>
         <div class="receipt-box" id="office-copy"></div>
     </div>
-    <div class="no-print" style="text-align:center; margin-top:20px;">
+    <div class="no-print" style="text-align:center; margin-top:20px; padding-bottom: 40px;">
         <button onclick="window.print()" style="padding:12px 35px; background:#2e7d32; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">PRINT / SAVE PDF</button>
         <button onclick="closeReceipt()" style="padding:12px 35px; background:#666; color:white; border:none; border-radius:6px; margin-left:10px; cursor:pointer;">CLOSE</button>
     </div>
@@ -85,20 +85,24 @@
     async function doSearch() {
         var id = document.getElementById('sid').value;
         if(!id) return;
-        document.getElementById('resultsList').innerHTML = "<p style='text-align:center'>Searching...</p>";
+        Swal.fire({title:'Searching...', didOpen:()=>Swal.showLoading()});
         try {
             const res = await fetch(`${SCRIPT_URL}?action=searchData&id=${id}`);
             allRecords = await res.json();
+            Swal.close();
             if(!allRecords.length) { document.getElementById('resultsList').innerHTML = "No record found"; return; }
             let html = "";
             allRecords.reverse().forEach((r, i) => {
                 html += `<div class="month-card">
-                    <div class="month-info"><h4>${r.Month}</h4><p>Paid: ₹${r["Total Paid"]}</p></div>
+                    <div class="month-info"><h4>${r.Month}</h4><p>Paid: ₹${r["Total Paid"]} | Date: ${r["Paid Date"] || ""}</p></div>
                     <button class="btn-view" onclick="viewReceipt(${i})">VIEW RECEIPT</button>
                 </div>`;
             });
             document.getElementById('resultsList').innerHTML = html;
-        } catch(e) { document.getElementById('resultsList').innerHTML = "Error!"; }
+        } catch(e) { 
+            Swal.fire("Error", "Check your Internet or Script URL", "error"); 
+            document.getElementById('resultsList').innerHTML = "Error!"; 
+        }
     }
 
     function viewReceipt(index) {
@@ -114,40 +118,37 @@
         document.querySelector('.container').style.display = 'block';
     }
 
+    // FIX: Dynamic Scanning of items from JSON data
     function generateReceiptHTML(d, type) {
         let sl = 1; let rows = "";
         
-        // 1. Fixed Main Fees
+        // 1-6. Fixed Regular Fees
         const main = ["Prev Dues", "Admission Fee", "School Fee", "School Van Fee", "Hostel Fee", "Exam Fee"];
         main.forEach(k => { if(d[k]>0) rows += `<tr><td align="center">${sl++}.</td><td>${k}</td><td align="center">1</td><td align="center">${d[k]}</td></tr>`; });
         
-        // 2. Dynamic Scanning (Exactly like Index.html logic)
-        // We find any keys in the data that are NOT in the fixed list and have values > 0
-        const exclude = ["Student Id","Month","Student Name","Father Name","Class","Address","Prev Dues","Admission Fee","School Fee","Hostel Fee","Exam Fee","School Bag","Discount","Total Paid","Total Dues","Remaining","Paid Date","School Van Fee","Development Fee","Other Fee","Sub Total", "Republic Day Fee", "Independence Day Fee", "UDISE Fee", "Timestamp"];
-        
-        let dynamicItems = Object.keys(d).filter(key => !exclude.includes(key) && d[key] > 0);
-        
-        if(dynamicItems.length > 0) {
-            rows += `<tr><td align="center">${sl++}.</td><td colspan="3"><b>Additional Items/Fees</b></td></tr>`;
-            dynamicItems.forEach((item, i) => {
-                rows += `<tr><td></td><td>(${roman(i+1)}) ${item}</td><td align="center">1</td><td align="center">${d[item]}</td></tr>`;
-            });
-        }
+        // 7. Dynamic Uniform Group
+        const uniItems = ["Shirts", "Pants", "T-Shirts", "Blazer", "Sweater", "Tie", "Belt", "Shoes", "Socks"];
+        let uRows = ""; let uCount = 1;
+        uniItems.forEach(k => { if(d[k]>0) uRows += `<tr><td></td><td>(${roman(uCount++)}) ${k}</td><td align="center">1</td><td align="center">${d[k]}</td></tr>`; });
+        if(uRows) { rows += `<tr><td align="center">${sl++}.</td><td colspan="3"><b>School Uniform Fee</b></td></tr>` + uRows; }
 
-        // 3. Special Fixed Fees (Miscellaneous)
-        const misc = ["Republic Day Fee", "Independence Day Fee", "UDISE Fee"];
-        let miscItems = misc.filter(k => d[k] > 0);
-        if(miscItems.length > 0) {
-            rows += `<tr><td align="center">${sl++}.</td><td colspan="3"><b>Other Fees</b></td></tr>`;
-            miscItems.forEach((k, i) => { rows += `<tr><td></td><td>(${roman(i+1)}) ${k}</td><td align="center">1</td><td align="center">${d[k]}</td></tr>`; });
-        }
+        // 8. Dynamic Books Group
+        const bookItems = ["Books Fee", "Copies", "Cover", "Instrument Box", "Diary"];
+        let bRows = ""; let bCount = 1;
+        bookItems.forEach(k => { if(d[k]>0) bRows += `<tr><td></td><td>(${roman(bCount++)}) ${k}</td><td align="center">1</td><td align="center">${d[k]}</td></tr>`; });
+        if(bRows) { rows += `<tr><td align="center">${sl++}.</td><td colspan="3"><b>School Books & Other</b></td></tr>` + bRows; }
 
-        // 4. Extra Main Fees
+        // 9. Dynamic Miscellaneous Group
+        const othItems = ["Republic Day Fee", "Independence Day Fee", "UDISE Fee"];
+        let oRows = ""; let oCount = 1;
+        othItems.forEach(k => { if(d[k]>0) oRows += `<tr><td></td><td>(${roman(oCount++)}) ${k}</td><td align="center">1</td><td align="center">${d[k]}</td></tr>`; });
+        if(oRows) { rows += `<tr><td align="center">${sl++}.</td><td colspan="3"><b>Miscellaneous Fees</b></td></tr>` + oRows; }
+
+        // 10-12. Fixed Additional Fees
         const extra = ["School Bag", "Development Fee", "Other Fee"];
         extra.forEach(k => { if(d[k]>0) rows += `<tr><td align="center">${sl++}.</td><td>${k}</td><td align="center">1</td><td align="center">${d[k]}</td></tr>`; });
 
-        return `
-            <div class="receipt-inner">
+        return `<div class="receipt-inner">
                 <div class="r-header">
                     <div style="display:flex; justify-content:space-between;"><span class="copy-tag">${type}</span><span style="font-size:9px">UDISE: 10101122703</span></div>
                     <h2>SAGAR PUBLIC SCHOOL</h2>
@@ -155,7 +156,7 @@
                     <p style="font-size:8px">email: sagarpublicschool2023@gmail.com</p>
                     <p style="font-size:7px">RTE Reg No.21211472023218114225 | UDISE No.10101122703</p>
                 </div>
-                <div class="top-info"><span>Sl: A-${Math.floor(1000 + Math.random()*9000)}</span><span>Date: ${d["Paid Date"] || new Date().toLocaleDateString('en-GB')}</span></div>
+                <div class="top-info"><span>Sl: A-${Math.floor(1000 + Math.random()*9000)}</span><span>Date: ${d["Paid Date"] || ""}</span></div>
                 <div class="student-details">
                     <div><b>Name:</b> ${d["Student Name"]}</div><div><b>ID:</b> ${d["Student Id"]}</div>
                     <div><b>Father:</b> ${d["Father Name"]}</div><div><b>Class:</b> ${d["Class"]}</div>
