@@ -329,23 +329,9 @@
 
         const extra = ["School Bag", "Development Fee", "Other Fee"];
         extra.forEach(k => { if(d[k]>0) rows += `<tr><td align="center">${sl++}.</td><td>${k}</td><td align="center">1</td><td align="center">${d[k]}</td></tr>`; });
-
-        // 1. Pehle check karein Search wala number (Jo sheet mein fix ho chuka hai)
-let rNo = d["_rowNum"]; 
-
-// 2. Agar Search nahi hai (New Entry hai), to purane records check karein
-if (!rNo) {
-    if (typeof allRecords !== 'undefined' && allRecords.length > 0) {
-        // Sabse naye record ka row number nikaal kar +1 karein
-        rNo = Number(allRecords[0]._rowNum) + 1;
-    } else {
-        // Agar kuch bhi nahi mila (Bilkul naya app), to manual check ya 2 rakhein
-        rNo = "New"; 
-    }
-}
-
-let receiptNo = "A-" + rNo;
-        
+        // Dono cases (Search aur New Entry) mein sirf blank dash dikhayega
+        let receiptNo = "Receipt No: S P S S__________";
+ 
         let dateVal = d["Paid Date"] || new Date().toLocaleDateString('en-GB');
 
         return `
