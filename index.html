@@ -295,36 +295,34 @@
         const main = ["Prev Dues", "Admission Fee", "School Fee", "School Van Fee", "Hostel Fee", "Exam Fee"];
         main.forEach(k => { if(d[k]>0) rows += `<tr><td align="center">${sl++}.</td><td>${k}</td><td align="center">1</td><td align="center">${d[k]}</td></tr>`; });
         
-        // 2. Dynamic Groups Logic (Entry & Search Consistent)
-        const exclude = ["Student Id","Month","Student Name","Father Name","Class","Address","Prev Dues","Admission Fee","School Fee","Hostel Fee","Exam Fee","School Bag","Discount","Total Paid","Total Dues","Remaining","Paid Date","School Van Fee","Development Fee","Other Fee","Sub Total", "Republic Day Fee", "Independence Day Fee", "UDISE Fee"];
-        
+        // 2. SPECIFIC ITEMS LIST (Aapki requirement ke hisab se)
+        const uniformList = ["Shirts", "Pants", "T-Shirts", "Trousers", "Leggings", "Blazer", "Sweater", "Belt", "Tie", "Shoes", "Socks", "Uniform"];
+        const booksList = ["Books Fee", "Copies", "Cover", "Instrument Box", "Diary", "Stationary"];
+        const miscList = ["Republic Day Fee", "Independence Day Fee", "UDISE Fee"];
+
         let uTemp = ""; let uC = 1;
         let bTemp = ""; let bC = 1;
         let mTemp = ""; let mC = 1;
 
-        // Scan all keys for Uniform and Books
-        Object.keys(d).forEach(k => {
-            if(!exclude.includes(k) && d[k]>0) {
-                if(/Dress|Pant|Shirt|Uniform|Tie|Belt|Shoes|Socks|Blazer|Sweater/i.test(k)) {
-                    uTemp += `<tr><td></td><td>(${roman(uC++)}) ${k}</td><td align="center">1</td><td align="center">${d[k]}</td></tr>`;
-                } else if(/Book|Copy|Copies|Cover|Box|Diary|Stationary/i.test(k)) {
-                    bTemp += `<tr><td></td><td>(${roman(bC++)}) ${k}</td><td align="center">1</td><td align="center">${d[k]}</td></tr>`;
-                }
-            }
+        // Section 7: School Uniform Fee
+        uniformList.forEach(k => {
+            if(d[k] > 0) uTemp += `<tr><td></td><td>(${roman(uC++)}) ${k}</td><td align="center">1</td><td align="center">${d[k]}</td></tr>`;
         });
+        if(uTemp) rows += `<tr><td align="center">${sl++}.</td><td colspan="3"><b>School Uniform Fee</b></td></tr>` + uTemp;
 
-        // Scan for Miscellaneous explicitly
-        const miscKeys = ["Republic Day Fee", "Independence Day Fee", "UDISE Fee"];
-        miscKeys.forEach(k => {
-            if(d[k]>0) mTemp += `<tr><td></td><td>(${roman(mC++)}) ${k}</td><td align="center">1</td><td align="center">${d[k]}</td></tr>`;
+        // Section 8: School Books & Others
+        booksList.forEach(k => {
+            if(d[k] > 0) bTemp += `<tr><td></td><td>(${roman(bC++)}) ${k}</td><td align="center">1</td><td align="center">${d[k]}</td></tr>`;
         });
+        if(bTemp) rows += `<tr><td align="center">${sl++}.</td><td colspan="3"><b>School Books & Other</b></td></tr>` + bTemp;
 
-        // Add to main rows
-        if(uTemp) { rows += `<tr><td align="center">${sl++}.</td><td colspan="3"><b>School Uniform Fee</b></td></tr>` + uTemp; }
-        if(bTemp) { rows += `<tr><td align="center">${sl++}.</td><td colspan="3"><b>School Books & Other</b></td></tr>` + bTemp; }
-        if(mTemp) { rows += `<tr><td align="center">${sl++}.</td><td colspan="3"><b>Miscellaneous Fees</b></td></tr>` + mTemp; }
+        // Section Miscellaneous
+        miscList.forEach(k => {
+            if(d[k] > 0) mTemp += `<tr><td></td><td>(${roman(mC++)}) ${k}</td><td align="center">1</td><td align="center">${d[k]}</td></tr>`;
+        });
+        if(mTemp) rows += `<tr><td align="center">${sl++}.</td><td colspan="3"><b>Miscellaneous Fees</b></td></tr>` + mTemp;
 
-        // 3. Extra Fees
+        // 3. Additional Fees
         const extra = ["School Bag", "Development Fee", "Other Fee"];
         extra.forEach(k => { if(d[k]>0) rows += `<tr><td align="center">${sl++}.</td><td>${k}</td><td align="center">1</td><td align="center">${d[k]}</td></tr>`; });
 
