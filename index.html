@@ -7,8 +7,12 @@
     <style>
         /* INTERFACE STYLES */
         :root { --p: #1a237e; --bg: #f4f7f6; }
-        body { font-family: 'Poppins', sans-serif; background: var(--bg); margin: 0; padding-top: 50px; }
-        .nav { background: var(--p); padding: 10px; position: fixed; top: 0; width: 100%; z-index: 1000; text-align: center; color: white; font-weight: bold; }
+        body { font-family: 'Poppins', sans-serif; background: var(--bg); margin: 0; padding-top: 60px; }
+        
+        .nav { background: var(--p); padding: 5px; position: fixed; top: 0; width: 100%; z-index: 1000; text-align: center; color: white; display: flex; justify-content: center; gap: 10px; }
+        .nav button { background: rgba(255,255,255,0.2); border: 1px solid white; color: white; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; }
+        .nav button.active { background: white; color: var(--p); }
+
         .container { max-width: 550px; margin: 10px auto; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         .section-title { background: #eee; padding: 5px 10px; font-weight: bold; margin-top: 15px; border-left: 4px solid var(--p); font-size: 13px; }
         .grid-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px; }
@@ -17,6 +21,13 @@
         .fee-table { width: 100%; border-collapse: collapse; margin-top: 5px; font-size: 12px; }
         .total-box { background: #fff9c4; padding: 15px; border-radius: 8px; margin-top: 15px; border: 1px solid #fbc02d; }
         .btn-save { width: 100%; padding: 15px; background: #2e7d32; color: white; border: none; border-radius: 6px; font-weight: bold; margin-top: 15px; cursor: pointer; font-size: 16px; }
+
+        /* SEARCH STYLES */
+        #search-view { display: none; }
+        .month-card { background: #fff; border-left: 5px solid var(--p); border-radius: 8px; padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #ddd; }
+        .month-info h4 { margin: 0; color: #333; font-size: 14px; }
+        .month-info p { margin: 2px 0 0; font-size: 12px; color: #666; }
+        .btn-view { background: #e91e63; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold; }
 
         /* RECEIPT DESIGN */
         #receipt-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 9999; overflow-y: auto; padding: 20px; }
@@ -37,7 +48,7 @@
         @media print { 
             @page { size: A4 landscape; margin: 10mm; }
             .no-print { display: none !important; } 
-            body { background: none; }
+            body { background: none; padding:0; }
             #receipt-modal { position: absolute; top:0; left:0; width:100%; display: block !important; padding: 0; }
             .print-wrapper { gap: 10px; }
         }
@@ -45,9 +56,12 @@
 </head>
 <body>
 
-<div class="nav no-print">SAGAR PUBLIC SCHOOL - FEE ENTRY</div>
+<div class="nav no-print">
+    <button id="btn-nav-entry" class="active" onclick="showView('entry')">NEW ENTRY</button>
+    <button id="btn-nav-search" onclick="showView('search')">SEARCH RECORD</button>
+</div>
 
-<div class="container no-print">
+<div id="entry-view" class="container no-print">
     <label>Select Month</label>
     <select id="Month" onchange="fetchHeaders()">
         <option>January</option><option>February</option><option>March</option><option>April</option><option>May</option><option>June</option><option>July</option><option>August</option><option>September</option><option>October</option><option>November</option><option>December</option>
@@ -123,6 +137,15 @@
     <button class="btn-save" onclick="saveData()">SAVE & PRINT DUAL RECEIPT 🖨️</button>
 </div>
 
+<div id="search-view" class="container no-print">
+    <h2 style="text-align:center; color:var(--p); font-size:16px;">Search Fee Records</h2>
+    <div style="display:flex; gap:5px; margin-bottom:15px;">
+        <input type="text" id="search-sid" placeholder="Enter Student ID">
+        <button onclick="doSearch()" style="background:var(--p); color:white; border:none; padding:0 20px; border-radius:4px; cursor:pointer;">SEARCH</button>
+    </div>
+    <div id="resultsList"></div>
+</div>
+
 <div id="receipt-modal">
     <div class="print-wrapper">
         <div class="receipt-box" id="guardian-copy"></div>
@@ -130,12 +153,20 @@
     </div>
     <div class="no-print" style="text-align:center; margin-top:20px;">
         <button onclick="if(window.AndroidPrint){ AndroidPrint.triggerPrint(); } else { window.print(); }" style="padding:12px 30px; background:#2e7d32; color:white; border:none; cursor:pointer; font-weight:bold; border-radius:5px;">PRINT / SAVE PDF</button>
-        <button onclick="location.reload()" style="padding:10px 40px; background:#666; color:white; border:none; border-radius:4px; margin-left:10px; cursor:pointer;">CLOSE</button>
+        <button onclick="closeReceipt()" style="padding:10px 40px; background:#666; color:white; border:none; border-radius:4px; margin-left:10px; cursor:pointer;">CLOSE</button>
     </div>
 </div>
 
 <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyYXysJEju_Ljzj6m-FhMtbptuLFB3vAIHk7FHT3c8yuafwKFOuShroGickq8kZ7wYisg/exec";
+    let allRecords = [];
+
+    function showView(view) {
+        document.getElementById('entry-view').style.display = view === 'entry' ? 'block' : 'none';
+        document.getElementById('search-view').style.display = view === 'search' ? 'block' : 'none';
+        document.getElementById('btn-nav-entry').className = view === 'entry' ? 'active' : '';
+        document.getElementById('btn-nav-search').className = view === 'search' ? 'active' : '';
+    }
 
     function roman(n) { const r = ["i","ii","iii","iv","v","vi","vii","viii","ix","x"]; return r[n-1] || n; }
 
@@ -156,15 +187,16 @@
 
     async function fetchHeaders() {
         const m = document.getElementById('Month').value;
-        const res = await fetch(`${SCRIPT_URL}?action=getHeaders&month=${m}`);
-        const headers = await res.json();
-        // Updated exclusion list to avoid redundancy
-        const exclude = ["Student Id","Month","Student Name","Father Name","Class","Address","Prev Dues","Admission Fee","School Fee","Hostel Fee","Exam Fee","School Bag","Discount","Total Paid","Total Dues","Remaining","Paid Date","School Van Fee","Development Fee","Other Fee","Sub Total", "Republic Day Fee", "Independence Day Fee", "UDISE Fee"];
-        let uniHtml = '<option value="">Select Uniform</option>';
-        let bookHtml = '<option value="">Select Books</option>';
-        headers.forEach(h => { if(h && !exclude.includes(h)) { uniHtml += `<option value="${h}">${h}</option>`; bookHtml += `<option value="${h}">${h}</option>`; } });
-        document.getElementById('uni-dropdown').innerHTML = uniHtml;
-        document.getElementById('book-dropdown').innerHTML = bookHtml;
+        try {
+            const res = await fetch(`${SCRIPT_URL}?action=getHeaders&month=${m}`);
+            const headers = await res.json();
+            const exclude = ["Student Id","Month","Student Name","Father Name","Class","Address","Prev Dues","Admission Fee","School Fee","Hostel Fee","Exam Fee","School Bag","Discount","Total Paid","Total Dues","Remaining","Paid Date","School Van Fee","Development Fee","Other Fee","Sub Total", "Republic Day Fee", "Independence Day Fee", "UDISE Fee"];
+            let uniHtml = '<option value="">Select Uniform</option>';
+            let bookHtml = '<option value="">Select Books</option>';
+            headers.forEach(h => { if(h && !exclude.includes(h)) { uniHtml += `<option value="${h}">${h}</option>`; bookHtml += `<option value="${h}">${h}</option>`; } });
+            document.getElementById('uni-dropdown').innerHTML = uniHtml;
+            document.getElementById('book-dropdown').innerHTML = bookHtml;
+        } catch(e) { console.log("Fetch error"); }
     }
 
     function addRow(type) {
@@ -183,11 +215,8 @@
 
     function calculate() {
         let sub = 0;
-        // Collects regular inputs
         document.querySelectorAll('.calc-total').forEach(i => sub += parseFloat(i.value) || 0);
-        // Collects dynamic table inputs (Uniform, Books, Others)
         document.querySelectorAll('.a-in').forEach(i => sub += parseFloat(i.value) || 0);
-        
         document.getElementById('sub_t').value = sub;
         let disc = parseFloat(document.getElementById('Discount').value) || 0;
         let paid = parseFloat(document.getElementById('Total Paid').value) || 0;
@@ -196,8 +225,6 @@
 
     async function saveData() {
         let subTotal = document.getElementById('sub_t').value;
-        let discount = document.getElementById('Discount').value || 0;
-        let remaining = document.getElementById('ui_due').innerText;
         let data = {
             "Month": document.getElementById('Month').value,
             "Student Id": document.getElementById('Student Id').value,
@@ -214,20 +241,51 @@
             "School Bag": document.getElementById('School Bag').value || 0,
             "Development Fee": document.getElementById('Development Fee').value || 0,
             "Other Fee": document.getElementById('Other Fee').value || 0,
-            "Discount": discount,
+            "Discount": document.getElementById('Discount').value || 0,
             "Total Paid": document.getElementById('Total Paid').value || 0,
             "Sub Total": subTotal, 
-            "Remaining": remaining
+            "Remaining": document.getElementById('ui_due').innerText
         };
-        
-        // Dynamic scan for ALL tables (uni, book, oth)
-        document.querySelectorAll('tr[data-h]').forEach(row => { 
-            data[row.getAttribute('data-h')] = row.querySelector('.a-in').value || 0; 
-        });
-        
-        Swal.fire({title:'Saving Data...', didOpen:()=>Swal.showLoading()});
+        document.querySelectorAll('tr[data-h]').forEach(row => { data[row.getAttribute('data-h')] = row.querySelector('.a-in').value || 0; });
+        Swal.fire({title:'Saving...', didOpen:()=>Swal.showLoading()});
         await fetch(SCRIPT_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(data) });
         showDualReceipt(data);
+    }
+
+    async function doSearch() {
+        let sid = document.getElementById('search-sid').value;
+        if(!sid) return;
+        Swal.fire({title:'Searching...', didOpen:()=>Swal.showLoading()});
+        try {
+            const res = await fetch(`${SCRIPT_URL}?action=searchData&id=${sid}`);
+            allRecords = await res.json();
+            Swal.close();
+            if(!allRecords.length) { document.getElementById('resultsList').innerHTML = "No record found"; return; }
+            let html = "";
+            allRecords.reverse().forEach((r, i) => {
+                html += `<div class="month-card">
+                    <div class="month-info"><h4>${r.Month}</h4><p>Paid: ₹${r["Total Paid"]} | ${r["Paid Date"] || ""}</p></div>
+                    <button class="btn-view" onclick="viewReceipt(${i})">VIEW RECEIPT</button>
+                </div>`;
+            });
+            document.getElementById('resultsList').innerHTML = html;
+        } catch(e) { Swal.fire("Error", "Check Connection", "error"); }
+    }
+
+    function viewReceipt(index) { showDualReceipt(allRecords[index]); }
+
+    function closeReceipt() {
+        document.getElementById('receipt-modal').style.display = 'none';
+        document.querySelectorAll('.container').forEach(c => c.style.display = 'block');
+        showView(document.getElementById('btn-nav-entry').className === 'active' ? 'entry' : 'search');
+    }
+
+    function showDualReceipt(d) {
+        document.getElementById('guardian-copy').innerHTML = generateReceiptHTML(d, "Guardian's Copy");
+        document.getElementById('office-copy').innerHTML = generateReceiptHTML(d, "Office Copy");
+        Swal.close();
+        document.getElementById('receipt-modal').style.display = 'block';
+        document.querySelectorAll('.container').forEach(c => c.style.display = 'none');
     }
 
     function generateReceiptHTML(d, type) {
@@ -235,24 +293,24 @@
         const main = ["Prev Dues", "Admission Fee", "School Fee", "School Van Fee", "Hostel Fee", "Exam Fee"];
         main.forEach(k => { if(d[k]>0) rows += `<tr><td align="center">${sl++}.</td><td>${k}</td><td align="center">1</td><td align="center">${d[k]}</td></tr>`; });
         
-        // Render Uniform rows
-        let uniRows = document.querySelectorAll('tr[data-type="uni"]');
-        if(uniRows.length > 0) {
-            rows += `<tr><td align="center">${sl++}.</td><td colspan="3"><b>School Uniform Fee</b></td></tr>`;
-            uniRows.forEach((row, i) => { rows += `<tr><td></td><td>(${roman(i+1)}) ${row.getAttribute('data-h')}</td><td align="center">${row.querySelector('.q-in').value}</td><td align="center">${row.querySelector('.a-in').value}</td></tr>`; });
-        }
-        // Render Book rows
-        let bookRows = document.querySelectorAll('tr[data-type="book"]');
-        if(bookRows.length > 0) {
-            rows += `<tr><td align="center">${sl++}.</td><td colspan="3"><b>School Books & Other</b></td></tr>`;
-            bookRows.forEach((row, i) => { rows += `<tr><td></td><td>(${roman(i+1)}) ${row.getAttribute('data-h')}</td><td align="center">${row.querySelector('.q-in').value}</td><td align="center">${row.querySelector('.a-in').value}</td></tr>`; });
-        }
-        // Render Other Fee rows
-        let othRows = document.querySelectorAll('tr[data-type="oth"]');
-        if(othRows.length > 0) {
-            rows += `<tr><td align="center">${sl++}.</td><td colspan="3"><b>Miscellaneous Fees</b></td></tr>`;
-            othRows.forEach((row, i) => { rows += `<tr><td></td><td>(${roman(i+1)}) ${row.getAttribute('data-h')}</td><td align="center">${row.querySelector('.q-in').value}</td><td align="center">${row.querySelector('.a-in').value}</td></tr>`; });
-        }
+        // Scan for Dynamic Fees (Uniform/Books/Misc)
+        const exclude = ["Student Id","Month","Student Name","Father Name","Class","Address","Prev Dues","Admission Fee","School Fee","Hostel Fee","Exam Fee","School Bag","Discount","Total Paid","Total Dues","Remaining","Paid Date","School Van Fee","Development Fee","Other Fee","Sub Total", "Republic Day Fee", "Independence Day Fee", "UDISE Fee"];
+        
+        // Uniform Group
+        let uR = ""; let uC = 1;
+        Object.keys(d).forEach(k => { if(!exclude.includes(k) && d[k]>0 && /Dress|Pant|Shirt|Uniform|Tie|Belt|Shoes|Socks|Blazer|Sweater/i.test(k)) uR += `<tr><td></td><td>(${roman(uC++)}) ${k}</td><td align="center">1</td><td align="center">${d[k]}</td></tr>`; });
+        if(uR) rows += `<tr><td align="center">${sl++}.</td><td colspan="3"><b>School Uniform Fee</b></td></tr>` + uR;
+
+        // Books Group
+        let bR = ""; let bC = 1;
+        Object.keys(d).forEach(k => { if(!exclude.includes(k) && d[k]>0 && /Book|Copy|Copies|Cover|Box|Diary|Stationary/i.test(k)) bR += `<tr><td></td><td>(${roman(bC++)}) ${k}</td><td align="center">1</td><td align="center">${d[k]}</td></tr>`; });
+        if(bR) rows += `<tr><td align="center">${sl++}.</td><td colspan="3"><b>School Books & Other</b></td></tr>` + bR;
+
+        // Misc Group
+        const misc = ["Republic Day Fee", "Independence Day Fee", "UDISE Fee"];
+        let mR = ""; let mC = 1;
+        misc.forEach(k => { if(d[k]>0) mR += `<tr><td></td><td>(${roman(mC++)}) ${k}</td><td align="center">1</td><td align="center">${d[k]}</td></tr>`; });
+        if(mR) rows += `<tr><td align="center">${sl++}.</td><td colspan="3"><b>Miscellaneous Fees</b></td></tr>` + mR;
 
         const extra = ["School Bag", "Development Fee", "Other Fee"];
         extra.forEach(k => { if(d[k]>0) rows += `<tr><td align="center">${sl++}.</td><td>${k}</td><td align="center">1</td><td align="center">${d[k]}</td></tr>`; });
@@ -266,7 +324,7 @@
                     <p style="font-size:8px">email: sagarpublicschool2023@gmail.com</p>
                     <p style="font-size:7px">RTE Reg No.21211472023218114225 | UDISE No.10101122703</p>
                 </div>
-                <div class="top-info"><span>Sl: A-1711</span><span>Date: ${new Date().toLocaleDateString('en-GB')}</span></div>
+                <div class="top-info"><span>Sl: A-${Math.floor(1000 + Math.random()*9000)}</span><span>Date: ${d["Paid Date"] || new Date().toLocaleDateString('en-GB')}</span></div>
                 <div class="student-details">
                     <div><b>Name:</b> ${d["Student Name"]}</div><div><b>ID:</b> ${d["Student Id"]}</div>
                     <div><b>Father:</b> ${d["Father Name"]}</div><div><b>Class:</b> ${d["Class"]}</div>
@@ -285,13 +343,6 @@
                 <div class="words-section"><b>Words:</b> ${numberToWords(d["Total Paid"])} Only.</div>
                 <div class="footer-sigs"><span>Parent Signature</span><span>Authorized Signature</span></div>
             </div>`;
-    }
-
-    function showDualReceipt(d) {
-        document.getElementById('guardian-copy').innerHTML = generateReceiptHTML(d, "Guardian's Copy");
-        document.getElementById('office-copy').innerHTML = generateReceiptHTML(d, "Office Copy");
-        Swal.close();
-        document.getElementById('receipt-modal').style.display = 'block';
     }
 
     window.onload = fetchHeaders;
