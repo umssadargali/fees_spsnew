@@ -330,12 +330,16 @@
         const extra = ["School Bag", "Development Fee", "Other Fee"];
         extra.forEach(k => { if(d[k]>0) rows += `<tr><td align="center">${sl++}.</td><td>${k}</td><td align="center">1</td><td align="center">${d[k]}</td></tr>`; });
 
-        // Naya Logic: Agar d["_rowNum"] hai (Search) to wo dikhao, 
-// nahi to agli sambhavit (next possible) row number dikhao.
+        // Pehle check karega ki records hain ya nahi, agar nahi toh 1 se start karega
+let lastRow = 1; 
+if (allRecords && allRecords.length > 0) {
+    // Sabse naye record ka row number nikaalna
+    lastRow = Number(allRecords[0]._rowNum) || 1;
+}
 
-        let nextRow = Number(allRecords.length > 0 ? allRecords[0]._rowNum + 1 : 2); 
-        let receiptNo = d["_rowNum"] ? "A-" + d["_rowNum"] : "A-" + nextRow;
-        
+// Agar Search hai toh d["_rowNum"], nahi toh agla number (lastRow + 1)
+let receiptNo = d["_rowNum"] ? "A-" + d["_rowNum"] : "A-" + (lastRow + 1);
+
         let dateVal = d["Paid Date"] || new Date().toLocaleDateString('en-GB');
 
         return `
